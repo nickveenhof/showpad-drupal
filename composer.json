@@ -1,0 +1,15 @@
+{
+  "name": "drupal/showpad",
+  "description": "Offers a poc of showpad file API",
+  "type": "drupal-module",
+  "license": "GPL-2.0+",
+  "require": {
+    "nickveenhof/showpad-api": "dev-master"
+  },
+  "repositories": [
+    {
+    "type": "vcs",
+    "url": "https://github.com/nickveenhof/showpad-api"
+    }
+  ]
+}

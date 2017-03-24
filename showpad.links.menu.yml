@@ -1,0 +1,5 @@
+showpad.settings:
+  title: 'Showpad'
+  description: 'Configure Showpad settings.'
+  route_name: showpad.admin_settings_form
+  parent: 'system.admin_config_services'

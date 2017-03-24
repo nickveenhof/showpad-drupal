@@ -1,0 +1,128 @@
+<?php
+
+use Drupal\file\FileInterface;
+use Drupal\node\NodeInterface;
+use Showpad\Client;
+use Showpad\Config;
+
+function showpad_node_insert(\Drupal\node\NodeInterface $node) {
+  showpad_file_action($node);
+}
+
+function showpad_node_update(NodeInterface $node) {
+  showpad_file_action($node);
+}
+
+function showpad_file_action(NodeInterface $node) {
+  $client = getShowpadClient();
+  $image_uuids = [];
+  $tags = [];
+
+  try {
+    $image_field = $node->get('field_image');
+    if (isset($image_field)) {
+      foreach($image_field->referencedEntities() as $delta => $image) {
+        $image_uuids[] = $image->uuid();
+      }
+    }
+  }
+  catch (Exception $e) {
+    //
+  }
+
+  try {
+    $tag_field = $node->get('field_tags');
+    if (isset($tag_field)) {
+      /** @var \Drupal\taxonomy\Entity\Term[] $tag_field_referenced_entities */
+      $tag_field_referenced_entities = $tag_field->referencedEntities();
+      foreach($tag_field_referenced_entities as $delta => $tag) {
+        $tags[$tag->uuid()] = $tag->getName();
+      }
+    }
+  }
+  catch (Exception $e) {
+    //
+  }
+
+  $assets = [];
+  foreach ($image_uuids as $uuid) {
+    $uuid_assets = $client->assetsList(array('externalId' => $uuid));
+    $assets = array_merge($assets, $uuid_assets['response']['items']);
+  }
+
+  // Tag management
+  $existing_tags_response = $client->tagsList();
+  $existing_tags = [];
+  if (!empty($existing_tags_response)) {
+    $existing_tag_items = $existing_tags_response['response']['items'];
+    foreach ($existing_tag_items as $tag) {
+      $existing_tags[$tag['name']] = $tag;
+    }
+  }
+
+  // If we found assets to update, add the tags to it
+  if  (!empty($assets) && !empty($tags)) {
+    foreach ($assets as $asset) {
+      // Get existing tags for this asset
+      $assetTags = $client->assetsTagsList($asset['id']);
+      $assetTagAssociative = [];
+      foreach ($assetTags['response']['items'] as $assetTag) {
+        $assetTagAssociative[$assetTag['id']] = $assetTag;
+      }
+
+      // Loop over all the node tags
+      foreach ($tags as $uuid => $tag) {
+        // Verify if the tag already exists in showpad
+        if (isset($existing_tags[$tag])) {
+          //verify if it already is linked
+          $existingTagId = $existing_tags[$tag]['id'];
+          if (!isset($assetTagAssociative[$existingTagId])) {
+            $client->assetsTagsAddById($asset['id'], $existingTagId);
+          }
+        }
+        else {
+          $client->assetsTagsAdd($asset['id'], $tag, $uuid);
+        }
+      }
+    }
+  }
+}
+
+function showpad_file_insert(FileInterface $file) {
+    $client = getShowpadClient();
+    $uri = $file->getFileUri();
+
+    $path = drupal_realpath($uri);
+    $client->assetsAdd($path, $file->uuid());
+}
+
+/**
+ * Get a showpad client based on the token login flow.
+ *
+ * @return Client
+ */
+function getShowpadClient() {
+
+    $settings = \Drupal::configFactory()->get('showpad.settings')->get('credential');
+    $url = $settings['api_url'];
+    $username =  $settings['username'];
+    $password =  $settings['password'];
+    $clientId =  $settings['client_id'];
+    $clientSecret = $settings['client_secret'];
+
+    // Create a config object
+    $config = new Config($url, $username, $password, $clientId, $clientSecret, null, null);
+
+    // Create an Authentication object, using the config
+    $auth = new Showpad\Authentication($config);
+    $auth->authenticate();
+
+    // Create a showpad client. This client contains all possible api methods.
+    $client = new Client($auth);
+
+    return $client;
+}
+
+function showpad_file_update(FileInterface $file) {
+    //dpm("update");
+}

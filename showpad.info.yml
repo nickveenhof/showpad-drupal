@@ -1,0 +1,5 @@
+type: module
+name: 'Showpad'
+description: 'Offers an poc for the showpad file API with Drupal.'
+core: 8.x
+package: Custom

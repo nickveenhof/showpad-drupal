@@ -1,0 +1,23 @@
+showpad.settings:
+  type: config_object
+  label: 'Showpad settings'
+  mapping:
+    credential:
+      type: config_object
+      label: 'Credential'
+      mapping:
+        client_id:
+          type: string
+          label: 'Client OAuth2 ID'
+        client_secret:
+          type: string
+          label: 'Client OAuth2 Secret'
+        username:
+          type: string
+          label: 'Showpad username'
+        password:
+          type: string
+          label: 'Showpad Password'
+        api_url:
+          type: string
+          label: 'Showpad Api Url'

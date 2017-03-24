@@ -1,0 +1,7 @@
+showpad.admin_settings_form:
+  path: 'admin/config/services/showpad'
+  defaults:
+    _form: '\Drupal\showpad\Form\AdminSettingsForm'
+    _title: 'Showpad Settings'
+  requirements:
+    _permission: 'administer showpad'
